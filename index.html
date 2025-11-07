@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Daily Planner</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: #fafafa;
+            max-width: 210mm;
+            margin: 0 auto;
+            color: #555;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                max-width: 100%;
+            }
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #e5e5e5;
+            padding-bottom: 10px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            color: #888;
+            letter-spacing: 6px;
+            font-weight: 200;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 18px;
+                letter-spacing: 3px;
+            }
+        }
+        
+        .date-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 10px;
+            font-weight: 400;
+            color: #999;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            .date-line {
+                font-size: 12px;
+            }
+        }
+        
+        .date-line input {
+            border: none;
+            border-bottom: 1px dotted #d5d5d5;
+            flex: 1;
+            background: transparent;
+            font-family: inherit;
+            font-size: inherit;
+            color: #555;
+            padding: 4px 5px;
+            min-width: 100px;
+        }
+        
+        .date-line input:focus {
+            outline: none;
+            border-bottom-color: #999;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+        }
+        
+        .section {
+            border: 1px solid #ececec;
+            padding: 10px;
+            background: #fff;
+            border-radius: 4px;
+        }
+        
+        @media (max-width: 768px) {
+            .section {
+                padding: 12px;
+            }
+        }
+        
+        .section.full {
+            grid-column: 1 / -1;
+        }
+        
+        .section h2 {
+            margin: 0 0 8px 0;
+            font-size: 10px;
+            font-weight: 500;
+            color: #888;
+            padding: 6px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        
+        @media (max-width: 768px) {
+            .section h2 {
+                font-size: 12px;
+                padding: 8px 0;
+            }
+        }
+        
+        .time-table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .time-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 7px;
+            margin-top: 6px;
+        }
+        
+        @media (max-width: 768px) {
+            .time-table {
+                font-size: 9px;
+                min-width: 600px;
+            }
+        }
+        
+        .time-table th {
+            background: #f8f8f8;
+            color: #888;
+            padding: 5px 2px;
+            border: 1px solid #ececec;
+            font-weight: 500;
+            text-align: center;
+        }
+        
+        .time-table th.task-header {
+            min-width: 50px;
+            max-width: 70px;
+            background: #fafafa;
+        }
+        
+        @media (max-width: 768px) {
+            .time-table th.task-header {
+                min-width: 40px;
+                position: sticky;
+                left: 0;
+                z-index: 2;
+            }
+        }
+        
+        .time-table th.time-header {
+            min-width: 15px;
+            max-width: 15px;
+            font-size: 7px;
+        }
+        
+        @media (max-width: 768px) {
+            .time-table th.time-header {
+                min-width: 25px;
+                font-size: 9px;
+            }
+        }
+        
+        .time-table td {
+            border: 1px solid #f0f0f0;
+            padding: 0;
+            height: 20px;
+            text-align: center;
+            background: #fff;
+        }
+        
+        @media (max-width: 768px) {
+            .time-table td {
+                height: 30px;
+            }
+        }
+        
+        .time-table td.task-cell {
+            text-align: center;
+            padding: 2px 5px;
+            font-size: 8px;
+            border-right: 1px solid #e0e0e0;
+            background: #fafafa;
+            font-weight: 500;
+            color: #777;
+        }
+        
+        @media (max-width: 768px) {
+            .time-table td.task-cell {
+                font-size: 10px;
+                position: sticky;
+                left: 0;
+                z-index: 1;
+            }
+        }
+        
+        .time-table td.time-cell {
+            min-width: 15px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        @media (max-width: 768px) {
+            .time-table td.time-cell {
+                min-width: 25px;
+            }
+        }
+        
+        .time-table td.time-cell:hover {
+            background: #f8f8f8;
+        }
+        
+        .time-table td.time-cell.filled {
+            background: #4a9eff;
+        }
+        
+        .time-table td.time-cell::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            border-top: 1px dotted #e5e5e5;
+            transform: translateY(-0.5px);
+            pointer-events: none;
+        }
+        
+        .health-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .health-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+        }
+        
+        .health-item {
+            display: flex;
+            align-items: center;
+            font-size: 9px;
+            font-weight: 400;
+            color: #888;
+        }
+        
+        @media (max-width: 768px) {
+            .health-item {
+                font-size: 14px;
+            }
+        }
+        
+        .health-item label {
+            min-width: 55px;
+        }
+        
+        @media (max-width: 768px) {
+            .health-item label {
+                min-width: 80px;
+            }
+        }
+        
+        .health-item input {
+            flex: 1;
+            border: none;
+            border-bottom: 1px dotted #ddd;
+            background: transparent;
+            font-family: inherit;
+            font-size: inherit;
+            color: #555;
+            padding: 4px 5px;
+            margin-left: 8px;
+        }
+        
+        .health-item input:focus {
+            outline: none;
+            border-bottom-color: #999;
+        }
+        
+        .meal-row {
+            display: flex;
+            margin-bottom: 6px;
+        }
+        
+        @media (max-width: 768px) {
+            .meal-row {
+                margin-bottom: 10px;
+            }
+        }
+        
+        .meal-row strong {
+            min-width: 55px;
+            font-size: 9px;
+            font-weight: 400;
+            color: #888;
+        }
+        
+        @media (max-width: 768px) {
+            .meal-row strong {
+                min-width: 80px;
+                font-size: 14px;
+            }
+        }
+        
+        .meal-row input {
+            flex: 1;
+            border: none;
+            border-bottom: 1px dotted #ddd;
+            background: transparent;
+            font-family: inherit;
+            font-size: 9px;
+            color: #555;
+            padding: 4px 5px;
+            margin-left: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .meal-row input {
+                font-size: 14px;
+            }
+        }
+        
+        .meal-row input:focus {
+            outline: none;
+            border-bottom-color: #999;
+        }
+        
+        .money-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .money-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+        }
+        
+        .money-item {
+            display: flex;
+            align-items: center;
+            font-size: 9px;
+            font-weight: 400;
+            color: #888;
+        }
+        
+        @media (max-width: 768px) {
+            .money-item {
+                font-size: 14px;
+            }
+        }
+        
+        .money-item label {
+            min-width: 60px;
+        }
+        
+        @media (max-width: 768px) {
+            .money-item label {
+                min-width: 80px;
+            }
+        }
+        
+        .money-item input {
+            flex: 1;
+            border: none;
+            border-bottom: 1px dotted #ddd;
+            background: transparent;
+            font-family: inherit;
+            font-size: inherit;
+            color: #555;
+            padding: 4px 5px;
+            margin-left: 8px;
+        }
+        
+        .money-item input:focus {
+            outline: none;
+            border-bottom-color: #999;
+        }
+        
+        .notes-area {
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 9px;
+            color: #555;
+            resize: vertical;
+            min-height: 60px;
+            padding: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .notes-area {
+                font-size: 14px;
+                min-height: 80px;
+                padding: 8px;
+            }
+        }
+        
+        .notes-area:focus {
+            outline: none;
+            background: #fafafa;
+        }
+        
+        .priority-list {
+            list-style: none;
+            padding: 0;
+            margin: 6px 0;
+        }
+        
+        .priority-list li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 9px;
+        }
+        
+        @media (max-width: 768px) {
+            .priority-list li {
+                font-size: 14px;
+                margin-bottom: 12px;
+            }
+        }
+        
+        .priority-list .number {
+            font-weight: 500;
+            font-size: 13px;
+            margin-right: 12px;
+            width: 20px;
+            color: #999;
+        }
+        
+        @media (max-width: 768px) {
+            .priority-list .number {
+                font-size: 18px;
+                width: 30px;
+            }
+        }
+        
+        .priority-list input {
+            flex: 1;
+            border: none;
+            border-bottom: 1px dotted #ddd;
+            background: transparent;
+            font-family: inherit;
+            font-size: 9px;
+            color: #555;
+            padding: 4px 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .priority-list input {
+                font-size: 14px;
+            }
+        }
+        
+        .priority-list input:focus {
+            outline: none;
+            border-bottom-color: #999;
+        }
+        
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                top: auto;
+                flex-direction: column;
+            }
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            background: #4a9eff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            transition: background 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .btn {
+                padding: 12px 20px;
+                font-size: 14px;
+                width: 100%;
+                min-width: 120px;
+            }
+        }
+        
+        .btn:hover {
+            background: #3a8eef;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn.secondary {
+            background: #888;
+        }
+        
+        .btn.secondary:hover {
+            background: #777;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 10mm;
+            }
+            .controls {
+                display: none;
+            }
+            .section {
+                box-shadow: none;
+            }
+            .time-table {
+                page-break-inside: avoid;
+            }
+            @page {
+                margin: 10mm;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button class="btn secondary" onclick="clearAll()">Clear All</button>
+        <button class="btn" onclick="saveToLocalStorage()">Save</button>
+        <button class="btn" onclick="window.print()">Print</button>
+    </div>
+
+    <div class="header">
+        <h1>DAILY PLANNER</h1>
+    </div>
+    
+    <div class="date-line">
+        <strong>DATE:</strong>
+        <input type="text" id="date" placeholder="MM/DD/YYYY">
+        <strong>DAY:</strong>
+        <input type="text" id="day" placeholder="Monday" style="flex: 0.5;">
+    </div>
+    
+    <!-- Time Blocking Table -->
+    <div class="section full">
+        <h2>Time Blocking Schedule (7 AM - 10 PM)</h2>
+        <div class="time-table-container">
+            <table class="time-table">
+                <thead>
+                    <tr>
+                        <th class="task-header">TASK</th>
+                        <th class="time-header">7</th>
+                        <th class="time-header">8</th>
+                        <th class="time-header">9</th>
+                        <th class="time-header">10</th>
+                        <th class="time-header">11</th>
+                        <th class="time-header">12</th>
+                        <th class="time-header">1</th>
+                        <th class="time-header">2</th>
+                        <th class="time-header">3</th>
+                        <th class="time-header">4</th>
+                        <th class="time-header">5</th>
+                        <th class="time-header">6</th>
+                        <th class="time-header">7</th>
+                        <th class="time-header">8</th>
+                        <th class="time-header">9</th>
+                        <th class="time-header">10</th>
+                    </tr>
+                </thead>
+                <tbody id="timeTable">
+                    <!-- Rows will be generated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="main-grid">
+        <!-- Weight & Health -->
+        <div class="section">
+            <h2>Health Tracker</h2>
+            <div class="health-grid">
+                <div class="health-item">
+                    <label>Weight:</label>
+                    <input type="text" id="weight" placeholder="lbs/kg">
+                </div>
+                <div class="health-item">
+                    <label>Sleep:</label>
+                    <input type="text" id="sleep" placeholder="hours">
+                </div>
+                <div class="health-item">
+                    <label>Water:</label>
+                    <input type="text" id="water" placeholder="glasses">
+                </div>
+                <div class="health-item">
+                    <label>Exercise:</label>
+                    <input type="text" id="exercise" placeholder="mins">
+                </div>
+            </div>
+            <textarea class="notes-area" id="healthNotes" placeholder="Additional health notes..."></textarea>
+        </div>
+        
+        <!-- Money Management -->
+        <div class="section">
+            <h2>Money Management</h2>
+            <div class="money-grid">
+                <div class="money-item">
+                    <label>Total:</label>
+                    <input type="text" id="total" placeholder="$0.00">
+                </div>
+                <div class="money-item">
+                    <label>Spent:</label>
+                    <input type="text" id="spent" placeholder="$0.00">
+                </div>
+                <div class="money-item">
+                    <label>Spoil:</label>
+                    <input type="text" id="spoil" placeholder="$0.00">
+                </div>
+                <div class="money-item">
+                    <label>Gained:</label>
+                    <input type="text" id="gained" placeholder="$0.00">
+                </div>
+            </div>
+            <textarea class="notes-area" id="moneyNotes" placeholder="Additional money notes..."></textarea>
+        </div>
+        
+        <!-- Nutrition -->
+        <div class="section">
+            <h2>Nutrition Log</h2>
+            <div class="meal-row">
+                <strong>Breakfast:</strong>
+                <input type="text" id="breakfast" placeholder="What did you eat?">
+            </div>
+            <div class="meal-row">
+                <strong>Lunch:</strong>
+                <input type="text" id="lunch" placeholder="What did you eat?">
+            </div>
+            <div class="meal-row">
+                <strong>Dinner:</strong>
+                <input type="text" id="dinner" placeholder="What did you eat?">
+            </div>
+            <div class="meal-row">
+                <strong>Snacks:</strong>
+                <input type="text" id="snacks" placeholder="What did you eat?">
+            </div>
+            <textarea class="notes-area" id="nutritionNotes" placeholder="Additional nutrition notes..."></textarea>
+        </div>
+        
+        <!-- Wins & Gratitude -->
+        <div class="section">
+            <h2>Wins & Gratitude</h2>
+            <textarea class="notes-area" id="winsGratitude" placeholder="What went well today? What are you grateful for?"></textarea>
+        </div>
+        
+        <!-- Tomorrow's Priorities -->
+        <div class="section full">
+            <h2>Tomorrow's Top 3 Priorities</h2>
+            <ul class="priority-list">
+                <li><span class="number">1.</span><input type="text" id="priority1" placeholder="Most important task"></li>
+                <li><span class="number">2.</span><input type="text" id="priority2" placeholder="Second priority"></li>
+                <li><span class="number">3.</span><input type="text" id="priority3" placeholder="Third priority"></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const tasks = ['S', 'D', 'A', 'MA', 'BT', 'MB', 'ST', 'PRJ', 'WO', 'NYT', 'ND', 'NM', 'LC', 'WORK'];
+        
+        // Generate time table rows
+        function initializeTimeTable() {
+            const tbody = document.getElementById('timeTable');
+            tasks.forEach(task => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td class="task-cell">${task}</td>` + 
+                    Array(16).fill(0).map((_, i) => 
+                        `<td class="time-cell" data-task="${task}" data-hour="${i}"></td>`
+                    ).join('');
+                tbody.appendChild(row);
+            });
+            
+            // Add click handlers
+            document.querySelectorAll('.time-cell').forEach(cell => {
+                cell.addEventListener('click', function() {
+                    this.classList.toggle('filled');
+                    saveData();
+                });
+            });
+        }
+        
+        // Data storage
+        const data = {
+            date: '',
+            day: '',
+            timeBlocks: {},
+            health: {},
+            money: {},
+            nutrition: {},
+            priorities: {},
+            notes: {}
+        };
+        
+        function saveData() {
+            // Save date and day
+            data.date = document.getElementById('date').value;
+            data.day = document.getElementById('day').value;
+            
+            // Save time blocks
+            data.timeBlocks = {};
+            document.querySelectorAll('.time-cell.filled').forEach(cell => {
+                const key = `${cell.dataset.task}-${cell.dataset.hour}`;
+                data.timeBlocks[key] = true;
+            });
+            
+            // Save health
+            data.health = {
+                weight: document.getElementById('weight').value,
+                sleep: document.getElementById('sleep').value,
+                water: document.getElementById('water').value,
+                exercise: document.getElementById('exercise').value
+            };
+            
+            // Save money
+            data.money = {
+                total: document.getElementById('total').value,
+                spent: document.getElementById('spent').value,
+                spoil: document.getElementById('spoil').value,
+                gained: document.getElementById('gained').value
+            };
+            
+            // Save nutrition
+            data.nutrition = {
+                breakfast: document.getElementById('breakfast').value,
+                lunch: document.getElementById('lunch').value,
+                dinner: document.getElementById('dinner').value,
+                snacks: document.getElementById('snacks').value
+            };
+            
+            // Save priorities
+            data.priorities = {
+                priority1: document.getElementById('priority1').value,
+                priority2: document.getElementById('priority2').value,
+                priority3: document.getElementById('priority3').value
+            };
+            
+            // Save notes
+            data.notes = {
+                health: document.getElementById('healthNotes').value,
+                money: document.getElementById('moneyNotes').value,
+                nutrition: document.getElementById('nutritionNotes').value,
+                winsGratitude: document.getElementById('winsGratitude').value
+            };
+        }
+        
+        function loadData() {
+            // Load date and day
+            document.getElementById('date').value = data.date || '';
+            document.getElementById('day').value = data.day || '';
+            
+            // Load time blocks
+            document.querySelectorAll('.time-cell').forEach(cell => {
+                cell.classList.remove('filled');
+            });
+            
+            Object.keys(data.timeBlocks).forEach(key => {
+                const [task, hour] = key.split('-');
+                const cell = document.querySelector(`.time-cell[data-task="${task}"][data-hour="${hour}"]`);
+                if (cell) cell.classList.add('filled');
+            });
+            
+            // Load health
+            Object.keys(data.health || {}).forEach(key => {
+                const el = document.getElementById(key);
+                if (el) el.value = data.health[key] || '';
+            });
+            
+            // Load money
+            Object.keys(data.money || {}).forEach(key => {
+                const el = document.getElementById(key);
+                if (el) el.value = data.money[key] || '';
+            });
+            
+            // Load nutrition
+            Object.keys(data.nutrition || {}).forEach(key => {
+                const el = document.getElementById(key);
+                if (el) el.value = data.nutrition[key] || '';
+            });
+            
+            // Load priorities
+            Object.keys(data.priorities || {}).forEach(key => {
+                const el = document.getElementById(key);
+                if (el) el.value = data.priorities[key] || '';
+            });
+            
+            // Load notes
+            Object.keys(data.notes || {}).forEach(key => {
+                const el = document.getElementById(key === 'winsGratitude' ? 'winsGratitude' : key + 'Notes');
+                if (el) el.value = data.notes[key] || '';
+            });
+        }
+        
+        function saveToLocalStorage() {
+            saveData();
+            try {
+                const dateKey = data.date || new Date().toLocaleDateString();
+                localStorage.setItem(`planner_${dateKey}`, JSON.stringify(data));
+                alert('Planner saved successfully!');
+            } catch (e) {
+                alert('Unable to save. Your browser may not support local storage.');
+            }
+        }
+        
+        function loadFromLocalStorage() {
+            try {
+                const dateKey = new Date().toLocaleDateString();
+                const saved = localStorage.getItem(`planner_${dateKey}`);
+                if (saved) {
+                    Object.assign(data, JSON.parse(saved));
+                    loadData();
+                }
+            } catch (e) {
+                console.log('No saved data found');
+            }
+        }
+        
+        function clearAll() {
+            if (confirm('Are you sure you want to clear all data?')) {
+                // Clear data object
+                data.date = '';
+                data.day = '';
+                data.timeBlocks = {};
+                data.health = {};
+                data.money = {};
+                data.nutrition = {};
+                data.priorities = {};
+                data.notes = {};
+                
+                // Clear all inputs
+                document.querySelectorAll('input, textarea').forEach(el => el.value = '');
+                document.querySelectorAll('.time-cell').forEach(cell => cell.classList.remove('filled'));
+                
+                // Set today's date
+                const today = new Date();
+                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                document.getElementById('date').value = today.toLocaleDateString();
+                document.getElementById('day').value = days[today.getDay()];
+                saveData();
+            }
+        }
+        
+        // Initialize
+        initializeTimeTable();
+        
+        // Set today's date by default
+        const today = new Date();
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        data.date = today.toLocaleDateString();
+        data.day = days[today.getDay()];
+        
+        // Load from localStorage if available
+        loadFromLocalStorage();
+        loadData();
+        
+        // Auto-save on all inputs
+        document.querySelectorAll('input, textarea').forEach(el => {
+            el.addEventListener('input', saveData);
+            el.addEventListener('change', saveData);
+        });
+    </script>
+</body>
+</html>
