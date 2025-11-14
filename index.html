@@ -1,921 +1,1203 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Daily Planner</title>
+    <title>Daily Planner Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <style>
         * {
             box-sizing: border-box;
-        }
-        
-        @page {
-            size: A4;
             margin: 0;
+            padding: 0;
         }
         
         body {
-            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             padding: 20px;
-            font-family: 'Segoe UI', 'Arial', sans-serif;
-            background: #fafafa;
-            max-width: 210mm;
+            color: #333;
+        }
+        
+        .app-container {
+            max-width: 1200px;
             margin: 0 auto;
-            color: #555;
         }
         
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-                max-width: 100%;
-            }
-        }
-        
+        /* Header */
         .header {
-            text-align: center;
-            margin-bottom: 12px;
-            border-bottom: 1px solid #e5e5e5;
-            padding-bottom: 10px;
-        }
-        
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
-            color: #888;
-            letter-spacing: 6px;
-            font-weight: 200;
-        }
-        
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 18px;
-                letter-spacing: 3px;
-            }
-        }
-        
-        .date-line {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: 10px 0;
-            font-size: 10px;
-            font-weight: 400;
-            color: #999;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+        
+        .header-title {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header-title h1 {
+            font-size: 24px;
+            color: #333;
+            font-weight: 700;
+        }
+        
+        .header-title p {
+            font-size: 13px;
+            color: #777;
+            margin-top: 2px;
+        }
+        
+        .header-actions {
+            display: flex;
             gap: 10px;
             flex-wrap: wrap;
         }
         
-        @media (max-width: 768px) {
-            .date-line {
-                font-size: 12px;
-            }
-        }
-        
-        .date-line input {
+        .btn {
+            padding: 10px 20px;
             border: none;
-            border-bottom: 1px dotted #d5d5d5;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #eb3349, #f45c43);
+            color: white;
+        }
+        
+        /* Date Navigation */
+        .date-nav {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .date-display {
+            display: flex;
+            align-items: center;
+            gap: 15px;
             flex: 1;
-            background: transparent;
-            font-family: inherit;
-            font-size: inherit;
-            color: #555;
-            padding: 4px 5px;
-            min-width: 100px;
         }
         
-        .date-line input:focus {
+        .date-input {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            min-width: 180px;
+        }
+        
+        .date-input:focus {
             outline: none;
-            border-bottom-color: #999;
+            border-color: #667eea;
         }
         
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+        .nav-arrows {
+            display: flex;
             gap: 10px;
-            margin-bottom: 10px;
         }
         
-        @media (max-width: 768px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
+        .nav-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: #f5f5f5;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #667eea;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        /* Main Content */
+        .content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
         }
         
         .section {
-            border: 1px solid #ececec;
-            padding: 10px;
-            background: #fff;
-            border-radius: 4px;
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
         }
         
-        @media (max-width: 768px) {
-            .section {
-                padding: 12px;
-            }
+        .section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
         }
         
-        .section.full {
-            grid-column: 1 / -1;
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
         }
         
-        .section h2 {
-            margin: 0 0 8px 0;
-            font-size: 10px;
-            font-weight: 500;
-            color: #888;
-            padding: 6px 0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 1px solid #f5f5f5;
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
         }
         
-        @media (max-width: 768px) {
-            .section h2 {
-                font-size: 12px;
-                padding: 8px 0;
-            }
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
         }
         
+        /* Time Blocking */
         .time-table-container {
             overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
+            border-radius: 10px;
+            border: 2px solid #f0f0f0;
         }
         
         .time-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 7px;
-            margin-top: 6px;
-        }
-        
-        @media (max-width: 768px) {
-            .time-table {
-                font-size: 9px;
-                min-width: 600px;
-            }
+            min-width: 800px;
         }
         
         .time-table th {
-            background: #f8f8f8;
-            color: #888;
-            padding: 5px 2px;
-            border: 1px solid #ececec;
-            font-weight: 500;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 8px;
+            font-size: 12px;
+            font-weight: 600;
             text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
         
         .time-table th.task-header {
-            min-width: 50px;
-            max-width: 70px;
-            background: #fafafa;
-        }
-        
-        @media (max-width: 768px) {
-            .time-table th.task-header {
-                min-width: 40px;
-                position: sticky;
-                left: 0;
-                z-index: 2;
-            }
-        }
-        
-        .time-table th.time-header {
-            min-width: 15px;
-            max-width: 15px;
-            font-size: 7px;
-        }
-        
-        @media (max-width: 768px) {
-            .time-table th.time-header {
-                min-width: 25px;
-                font-size: 9px;
-            }
+            min-width: 80px;
+            text-align: left;
+            padding-left: 15px;
         }
         
         .time-table td {
-            border: 1px solid #f0f0f0;
+            border: 1px solid #e0e0e0;
             padding: 0;
-            height: 20px;
-            text-align: center;
-            background: #fff;
-        }
-        
-        @media (max-width: 768px) {
-            .time-table td {
-                height: 30px;
-            }
+            height: 35px;
         }
         
         .time-table td.task-cell {
-            text-align: center;
-            padding: 2px 5px;
-            font-size: 8px;
-            border-right: 1px solid #e0e0e0;
-            background: #fafafa;
-            font-weight: 500;
-            color: #777;
-        }
-        
-        @media (max-width: 768px) {
-            .time-table td.task-cell {
-                font-size: 10px;
-                position: sticky;
-                left: 0;
-                z-index: 1;
-            }
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #667eea;
+            padding: 8px 15px;
+            font-size: 13px;
         }
         
         .time-table td.time-cell {
-            min-width: 15px;
-            position: relative;
             cursor: pointer;
-            transition: background 0.2s;
-        }
-        
-        @media (max-width: 768px) {
-            .time-table td.time-cell {
-                min-width: 25px;
-            }
+            transition: all 0.2s ease;
+            position: relative;
         }
         
         .time-table td.time-cell:hover {
-            background: #f8f8f8;
+            background: #f0f0ff;
         }
         
         .time-table td.time-cell.filled {
-            background: #4a9eff;
+            background: linear-gradient(135deg, #667eea, #764ba2);
         }
         
-        .time-table td.time-cell::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            border-top: 1px dotted #e5e5e5;
-            transform: translateY(-0.5px);
-            pointer-events: none;
-        }
-        
-        .health-grid {
+        /* Grid Layouts */
+        .grid-2 {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 8px;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
         }
         
-        @media (max-width: 768px) {
-            .health-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-        }
-        
-        .health-item {
+        .form-group {
             display: flex;
-            align-items: center;
-            font-size: 9px;
-            font-weight: 400;
-            color: #888;
+            flex-direction: column;
+            gap: 8px;
         }
         
-        @media (max-width: 768px) {
-            .health-item {
-                font-size: 14px;
-            }
-        }
-        
-        .health-item label {
-            min-width: 55px;
-        }
-        
-        @media (max-width: 768px) {
-            .health-item label {
-                min-width: 80px;
-            }
-        }
-        
-        .health-item input {
-            flex: 1;
-            border: none;
-            border-bottom: 1px dotted #ddd;
-            background: transparent;
-            font-family: inherit;
-            font-size: inherit;
+        .form-group label {
+            font-weight: 600;
             color: #555;
-            padding: 4px 5px;
-            margin-left: 8px;
+            font-size: 14px;
         }
         
-        .health-item input:focus {
+        .form-group input,
+        .form-group textarea {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
             outline: none;
-            border-bottom-color: #999;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         
-        .meal-row {
-            display: flex;
-            margin-bottom: 6px;
-        }
-        
-        @media (max-width: 768px) {
-            .meal-row {
-                margin-bottom: 10px;
-            }
-        }
-        
-        .meal-row strong {
-            min-width: 55px;
-            font-size: 9px;
-            font-weight: 400;
-            color: #888;
-        }
-        
-        @media (max-width: 768px) {
-            .meal-row strong {
-                min-width: 80px;
-                font-size: 14px;
-            }
-        }
-        
-        .meal-row input {
-            flex: 1;
-            border: none;
-            border-bottom: 1px dotted #ddd;
-            background: transparent;
-            font-family: inherit;
-            font-size: 9px;
-            color: #555;
-            padding: 4px 5px;
-            margin-left: 8px;
-        }
-        
-        @media (max-width: 768px) {
-            .meal-row input {
-                font-size: 14px;
-            }
-        }
-        
-        .meal-row input:focus {
-            outline: none;
-            border-bottom-color: #999;
-        }
-        
-        .money-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 8px;
-        }
-        
-        @media (max-width: 768px) {
-            .money-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-        }
-        
-        .money-item {
-            display: flex;
-            align-items: center;
-            font-size: 9px;
-            font-weight: 400;
-            color: #888;
-        }
-        
-        @media (max-width: 768px) {
-            .money-item {
-                font-size: 14px;
-            }
-        }
-        
-        .money-item label {
-            min-width: 60px;
-        }
-        
-        @media (max-width: 768px) {
-            .money-item label {
-                min-width: 80px;
-            }
-        }
-        
-        .money-item input {
-            flex: 1;
-            border: none;
-            border-bottom: 1px dotted #ddd;
-            background: transparent;
-            font-family: inherit;
-            font-size: inherit;
-            color: #555;
-            padding: 4px 5px;
-            margin-left: 8px;
-        }
-        
-        .money-item input:focus {
-            outline: none;
-            border-bottom-color: #999;
-        }
-        
-        .notes-area {
-            width: 100%;
-            border: none;
-            background: transparent;
-            font-family: inherit;
-            font-size: 9px;
-            color: #555;
+        .form-group textarea {
             resize: vertical;
-            min-height: 60px;
-            padding: 5px;
+            min-height: 100px;
         }
         
-        @media (max-width: 768px) {
-            .notes-area {
-                font-size: 14px;
-                min-height: 80px;
-                padding: 8px;
-            }
-        }
-        
-        .notes-area:focus {
-            outline: none;
-            background: #fafafa;
-        }
-        
+        /* Priority List */
         .priority-list {
             list-style: none;
-            padding: 0;
-            margin: 6px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
         
-        .priority-list li {
+        .priority-item {
             display: flex;
             align-items: center;
-            margin-bottom: 8px;
-            font-size: 9px;
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
         }
         
-        @media (max-width: 768px) {
-            .priority-list li {
-                font-size: 14px;
-                margin-bottom: 12px;
-            }
+        .priority-number {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            flex-shrink: 0;
         }
         
-        .priority-list .number {
-            font-weight: 500;
-            font-size: 13px;
-            margin-right: 12px;
-            width: 20px;
-            color: #999;
-        }
-        
-        @media (max-width: 768px) {
-            .priority-list .number {
-                font-size: 18px;
-                width: 30px;
-            }
-        }
-        
-        .priority-list input {
+        .priority-item input {
             flex: 1;
             border: none;
-            border-bottom: 1px dotted #ddd;
             background: transparent;
-            font-family: inherit;
-            font-size: 9px;
-            color: #555;
-            padding: 4px 5px;
-        }
-        
-        @media (max-width: 768px) {
-            .priority-list input {
-                font-size: 14px;
-            }
-        }
-        
-        .priority-list input:focus {
-            outline: none;
-            border-bottom-color: #999;
-        }
-        
-        .controls {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            gap: 10px;
-            z-index: 1000;
-        }
-        
-        @media (max-width: 768px) {
-            .controls {
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                top: auto;
-                flex-direction: column;
-            }
-        }
-        
-        .btn {
-            padding: 8px 16px;
-            background: #4a9eff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 11px;
+            font-size: 15px;
             font-weight: 500;
-            transition: background 0.2s;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            color: #333;
+            padding: 8px;
         }
         
+        .priority-item input:focus {
+            outline: none;
+            background: white;
+            border-radius: 5px;
+        }
+        
+        /* History Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            padding: 25px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+        }
+        
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .close-modal {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: #f5f5f5;
+            cursor: pointer;
+            font-size: 24px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .close-modal:hover {
+            background: #eb3349;
+            color: white;
+        }
+        
+        .modal-body {
+            padding: 25px;
+        }
+        
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .history-item {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid #667eea;
+        }
+        
+        .history-item:hover {
+            background: #e8e9ff;
+            transform: translateX(5px);
+        }
+        
+        .history-date {
+            font-weight: 700;
+            font-size: 18px;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .history-preview {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+        
+        .status-saved {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-saving {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive */
         @media (max-width: 768px) {
-            .btn {
-                padding: 12px 20px;
-                font-size: 14px;
-                width: 100%;
-                min-width: 120px;
+            body {
+                padding: 10px;
             }
-        }
-        
-        .btn:hover {
-            background: #3a8eef;
-        }
-        
-        .btn:active {
-            transform: scale(0.98);
-        }
-        
-        .btn.secondary {
-            background: #888;
-        }
-        
-        .btn.secondary:hover {
-            background: #777;
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header-title h1 {
+                font-size: 20px;
+            }
+            
+            .date-nav {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .date-display {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
         }
         
         @media print {
             body {
                 background: white;
-                padding: 10mm;
+                padding: 0;
             }
-            .controls {
-                display: none;
+            
+            .header-actions,
+            .nav-arrows,
+            .btn {
+                display: none !important;
             }
-            .section {
+            
+            .content {
                 box-shadow: none;
-            }
-            .time-table {
-                page-break-inside: avoid;
-            }
-            @page {
-                margin: 10mm;
+                border: 1px solid #ddd;
             }
         }
     </style>
 </head>
 <body>
-    <div class="controls">
-        <button class="btn secondary" onclick="clearAll()">Clear All</button>
-        <button class="btn" onclick="saveToLocalStorage()">Save</button>
-        <button class="btn" onclick="window.print()">Print</button>
-    </div>
-
-    <div class="header">
-        <h1>DAILY PLANNER</h1>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <div class="logo">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="header-title">
+                    <h1>Daily Planner Pro</h1>
+                    <p>Organize your day, track your progress</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="status-badge status-saved" id="saveStatus">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Saved</span>
+                </div>
+                <button class="btn btn-secondary" onclick="viewHistory()">
+                    <i class="fas fa-history"></i> History
+                </button>
+                <button class="btn btn-success" onclick="saveNow()">
+                    <i class="fas fa-save"></i> Save Now
+                </button>
+                <button class="btn btn-primary" onclick="window.print()">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+        </div>
+        
+        <!-- Date Navigation -->
+        <div class="date-nav">
+            <div class="date-display">
+                <input type="date" id="dateInput" class="date-input">
+                <strong id="dayDisplay" style="font-size: 18px; color: #667eea;"></strong>
+            </div>
+            <div class="nav-arrows">
+                <button class="nav-btn" onclick="changeDate(-1)" title="Previous Day">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="nav-btn" onclick="setToday()" title="Today">
+                    <i class="fas fa-calendar-day"></i>
+                </button>
+                <button class="nav-btn" onclick="changeDate(1)" title="Next Day">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="content">
+            <!-- Time Blocking -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h2 class="section-title">Time Blocking (7 AM - 10 PM)</h2>
+                </div>
+                <div class="time-table-container">
+                    <table class="time-table">
+                        <thead>
+                            <tr>
+                                <th class="task-header">TASK</th>
+                                <th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th>
+                                <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th>
+                                <th>7</th><th>8</th><th>9</th><th>10</th>
+                            </tr>
+                        </thead>
+                        <tbody id="timeTable"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Health Tracker -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-icon" style="background: linear-gradient(135deg, #11998e, #38ef7d);">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <h2 class="section-title">Health Tracker</h2>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label><i class="fas fa-weight"></i> Weight</label>
+                        <input type="text" id="weight" placeholder="lbs/kg">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-bed"></i> Sleep</label>
+                        <input type="text" id="sleep" placeholder="hours">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-tint"></i> Water</label>
+                        <input type="text" id="water" placeholder="glasses">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-running"></i> Exercise</label>
+                        <input type="text" id="exercise" placeholder="minutes">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Notes</label>
+                    <textarea id="healthNotes" placeholder="Additional health notes..."></textarea>
+                </div>
+            </div>
+            
+            <!-- Nutrition -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    <h2 class="section-title">Nutrition Log</h2>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>🍳 Breakfast</label>
+                        <input type="text" id="breakfast" placeholder="What did you eat?">
+                    </div>
+                    <div class="form-group">
+                        <label>🥗 Lunch</label>
+                        <input type="text" id="lunch" placeholder="What did you eat?">
+                    </div>
+                    <div class="form-group">
+                        <label>🍝 Dinner</label>
+                        <input type="text" id="dinner" placeholder="What did you eat?">
+                    </div>
+                    <div class="form-group">
+                        <label>🍎 Snacks</label>
+                        <input type="text" id="snacks" placeholder="What did you eat?">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Notes</label>
+                    <textarea id="nutritionNotes" placeholder="Additional nutrition notes..."></textarea>
+                </div>
+            </div>
+            
+            <!-- Money Management -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-icon" style="background: linear-gradient(135deg, #ffecd2, #fcb69f);">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <h2 class="section-title">Money Management</h2>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>💰 Total</label>
+                        <input type="text" id="total" placeholder="$0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>💸 Spent</label>
+                        <input type="text" id="spent" placeholder="$0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>🎁 Spoil</label>
+                        <input type="text" id="spoil" placeholder="$0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>📈 Gained</label>
+                        <input type="text" id="gained" placeholder="$0.00">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Notes</label>
+                    <textarea id="moneyNotes" placeholder="Additional money notes..."></textarea>
+                </div>
+            </div>
+            
+            <!-- Wins & Gratitude -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-icon" style="background: linear-gradient(135deg, #fa709a, #fee140);">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <h2 class="section-title">Wins & Gratitude</h2>
+                </div>
+                <div class="form-group">
+                    <textarea id="winsGratitude" placeholder="What went well today? What are you grateful for?"></textarea>
+                </div>
+            </div>
+            
+            <!-- Tomorrow's Priorities -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                        <i class="fas fa-list-ol"></i>
+                    </div>
+                    <h2 class="section-title">Tomorrow's Top 3 Priorities</h2>
+                </div>
+                <ul class="priority-list">
+                    <li class="priority-item">
+                        <div class="priority-number">1</div>
+                        <input type="text" id="priority1" placeholder="Most important task">
+                    </li>
+                    <li class="priority-item">
+                        <div class="priority-number">2</div>
+                        <input type="text" id="priority2" placeholder="Second priority">
+                    </li>
+                    <li class="priority-item">
+                        <div class="priority-number">3</div>
+                        <input type="text" id="priority3" placeholder="Third priority">
+                    </li>
+                </ul>
+            </div>
+        </div>
     </div>
     
-    <div class="date-line">
-        <strong>DATE:</strong>
-        <input type="text" id="date" placeholder="MM/DD/YYYY">
-        <strong>DAY:</strong>
-        <input type="text" id="day" placeholder="Monday" style="flex: 0.5;">
-    </div>
-    
-    <!-- Time Blocking Table -->
-    <div class="section full">
-        <h2>Time Blocking Schedule (7 AM - 10 PM)</h2>
-        <div class="time-table-container">
-            <table class="time-table">
-                <thead>
-                    <tr>
-                        <th class="task-header">TASK</th>
-                        <th class="time-header">7</th>
-                        <th class="time-header">8</th>
-                        <th class="time-header">9</th>
-                        <th class="time-header">10</th>
-                        <th class="time-header">11</th>
-                        <th class="time-header">12</th>
-                        <th class="time-header">1</th>
-                        <th class="time-header">2</th>
-                        <th class="time-header">3</th>
-                        <th class="time-header">4</th>
-                        <th class="time-header">5</th>
-                        <th class="time-header">6</th>
-                        <th class="time-header">7</th>
-                        <th class="time-header">8</th>
-                        <th class="time-header">9</th>
-                        <th class="time-header">10</th>
-                    </tr>
-                </thead>
-                <tbody id="timeTable">
-                    <!-- Rows will be generated by JavaScript -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-    
-    <div class="main-grid">
-        <!-- Weight & Health -->
-        <div class="section">
-            <h2>Health Tracker</h2>
-            <div class="health-grid">
-                <div class="health-item">
-                    <label>Weight:</label>
-                    <input type="text" id="weight" placeholder="lbs/kg">
-                </div>
-                <div class="health-item">
-                    <label>Sleep:</label>
-                    <input type="text" id="sleep" placeholder="hours">
-                </div>
-                <div class="health-item">
-                    <label>Water:</label>
-                    <input type="text" id="water" placeholder="glasses">
-                </div>
-                <div class="health-item">
-                    <label>Exercise:</label>
-                    <input type="text" id="exercise" placeholder="mins">
+    <!-- History Modal -->
+    <div class="modal" id="historyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-history"></i> Your Planning History
+                </h3>
+                <button class="close-modal" onclick="closeHistory()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="history-list" id="historyList">
+                    <p style="text-align: center; color: #999; padding: 40px 0;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 32px;"></i>
+                        <br><br>Loading history...
+                    </p>
                 </div>
             </div>
-            <textarea class="notes-area" id="healthNotes" placeholder="Additional health notes..."></textarea>
-        </div>
-        
-        <!-- Money Management -->
-        <div class="section">
-            <h2>Money Management</h2>
-            <div class="money-grid">
-                <div class="money-item">
-                    <label>Total:</label>
-                    <input type="text" id="total" placeholder="$0.00">
-                </div>
-                <div class="money-item">
-                    <label>Spent:</label>
-                    <input type="text" id="spent" placeholder="$0.00">
-                </div>
-                <div class="money-item">
-                    <label>Spoil:</label>
-                    <input type="text" id="spoil" placeholder="$0.00">
-                </div>
-                <div class="money-item">
-                    <label>Gained:</label>
-                    <input type="text" id="gained" placeholder="$0.00">
-                </div>
-            </div>
-            <textarea class="notes-area" id="moneyNotes" placeholder="Additional money notes..."></textarea>
-        </div>
-        
-        <!-- Nutrition -->
-        <div class="section">
-            <h2>Nutrition Log</h2>
-            <div class="meal-row">
-                <strong>Breakfast:</strong>
-                <input type="text" id="breakfast" placeholder="What did you eat?">
-            </div>
-            <div class="meal-row">
-                <strong>Lunch:</strong>
-                <input type="text" id="lunch" placeholder="What did you eat?">
-            </div>
-            <div class="meal-row">
-                <strong>Dinner:</strong>
-                <input type="text" id="dinner" placeholder="What did you eat?">
-            </div>
-            <div class="meal-row">
-                <strong>Snacks:</strong>
-                <input type="text" id="snacks" placeholder="What did you eat?">
-            </div>
-            <textarea class="notes-area" id="nutritionNotes" placeholder="Additional nutrition notes..."></textarea>
-        </div>
-        
-        <!-- Wins & Gratitude -->
-        <div class="section">
-            <h2>Wins & Gratitude</h2>
-            <textarea class="notes-area" id="winsGratitude" placeholder="What went well today? What are you grateful for?"></textarea>
-        </div>
-        
-        <!-- Tomorrow's Priorities -->
-        <div class="section full">
-            <h2>Tomorrow's Top 3 Priorities</h2>
-            <ul class="priority-list">
-                <li><span class="number">1.</span><input type="text" id="priority1" placeholder="Most important task"></li>
-                <li><span class="number">2.</span><input type="text" id="priority2" placeholder="Second priority"></li>
-                <li><span class="number">3.</span><input type="text" id="priority3" placeholder="Third priority"></li>
-            </ul>
         </div>
     </div>
 
     <script>
-        const tasks = ['S', 'D', 'A', 'MA', 'BT', 'MB', 'ST', 'PRJ', 'WO', 'NYT', 'ND', 'NM', 'LC', 'WORK'];
-        
-        // Generate time table rows
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCL4cB6loL0XtxljIUa8Hd92Ff4mw9ftO8",
+            authDomain: "eshopproject-19bb4.firebaseapp.com",
+            projectId: "eshopproject-19bb4",
+            storageBucket: "eshopproject-19bb4.appspot.com",
+            messagingSenderId: "863268336252",
+            appId: "1:863268336252:web:e90c30527cf0c56f0d4ff9"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Task abbreviations with emojis
+        const tasks = [
+            '📚 Study', 
+            '💻 Deep Work', 
+            '📋 Admin', 
+            '👥 Meetings', 
+            '☕ Break Time', 
+            '🍽️ Meal Break', 
+            '⚽ Sport/Training', 
+            '🎯 Project', 
+            '💪 Workout', 
+            '📰 NYT', 
+            '🔕 No Distraction', 
+            '🚫 No Meeting', 
+            '🏠 Life/Chores', 
+            '💼 Work'
+        ];
+
+        let currentDate = new Date();
+        let autoSaveTimer = null;
+        let scheduledSaveTimer = null;
+
+        // Initialize
+        function init() {
+            initializeTimeTable();
+            setToday();
+            setupAutoSave();
+            setupScheduledSave();
+            setupEventListeners();
+        }
+
+        // Initialize Time Table
         function initializeTimeTable() {
             const tbody = document.getElementById('timeTable');
-            tasks.forEach(task => {
+            tbody.innerHTML = '';
+            
+            tasks.forEach((task, idx) => {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td class="task-cell">${task}</td>` + 
-                    Array(16).fill(0).map((_, i) => 
-                        `<td class="time-cell" data-task="${task}" data-hour="${i}"></td>`
-                    ).join('');
+                row.innerHTML = `
+                    <td class="task-cell">${task}</td>
+                    ${Array(16).fill(0).map((_, i) => 
+                        `<td class="time-cell" data-task="${idx}" data-hour="${i}"></td>`
+                    ).join('')}
+                `;
                 tbody.appendChild(row);
             });
             
-            // Add click handlers
             document.querySelectorAll('.time-cell').forEach(cell => {
                 cell.addEventListener('click', function() {
                     this.classList.toggle('filled');
-                    saveData();
+                    triggerAutoSave();
                 });
             });
         }
-        
-        // Data storage
-        const data = {
-            date: '',
-            day: '',
-            timeBlocks: {},
-            health: {},
-            money: {},
-            nutrition: {},
-            priorities: {},
-            notes: {}
-        };
-        
-        function saveData() {
-            // Save date and day
-            data.date = document.getElementById('date').value;
-            data.day = document.getElementById('day').value;
+
+        // Date Functions
+        function setToday() {
+            currentDate = new Date();
+            updateDateDisplay();
+            loadData();
+        }
+
+        function changeDate(days) {
+            currentDate.setDate(currentDate.getDate() + days);
+            updateDateDisplay();
+            loadData();
+        }
+
+        function updateDateDisplay() {
+            const dateInput = document.getElementById('dateInput');
+            const dayDisplay = document.getElementById('dayDisplay');
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             
-            // Save time blocks
-            data.timeBlocks = {};
+            const year = currentDate.getFullYear();
+            const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+            const day = String(currentDate.getDate()).padStart(2, '0');
+            
+            dateInput.value = `${year}-${month}-${day}`;
+            dayDisplay.textContent = days[currentDate.getDay()];
+        }
+        
+        // Listen to date input changes
+        document.getElementById('dateInput').addEventListener('change', function() {
+            const selectedDate = new Date(this.value + 'T00:00:00');
+            if (!isNaN(selectedDate.getTime())) {
+                currentDate = selectedDate;
+                updateDateDisplay();
+                loadData();
+            }
+        });
+
+        // Data Functions
+        function getDateKey() {
+            return currentDate.toISOString().split('T')[0];
+        }
+
+        function collectData() {
+            const data = {
+                date: getDateKey(),
+                dayOfWeek: document.getElementById('dayDisplay').textContent,
+                timeBlocks: {},
+                health: {
+                    weight: document.getElementById('weight').value,
+                    sleep: document.getElementById('sleep').value,
+                    water: document.getElementById('water').value,
+                    exercise: document.getElementById('exercise').value,
+                    notes: document.getElementById('healthNotes').value
+                },
+                nutrition: {
+                    breakfast: document.getElementById('breakfast').value,
+                    lunch: document.getElementById('lunch').value,
+                    dinner: document.getElementById('dinner').value,
+                    snacks: document.getElementById('snacks').value,
+                    notes: document.getElementById('nutritionNotes').value
+                },
+                money: {
+                    total: document.getElementById('total').value,
+                    spent: document.getElementById('spent').value,
+                    spoil: document.getElementById('spoil').value,
+                    gained: document.getElementById('gained').value,
+                    notes: document.getElementById('moneyNotes').value
+                },
+                winsGratitude: document.getElementById('winsGratitude').value,
+                priorities: {
+                    priority1: document.getElementById('priority1').value,
+                    priority2: document.getElementById('priority2').value,
+                    priority3: document.getElementById('priority3').value
+                },
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            // Collect time blocks
             document.querySelectorAll('.time-cell.filled').forEach(cell => {
                 const key = `${cell.dataset.task}-${cell.dataset.hour}`;
                 data.timeBlocks[key] = true;
             });
             
-            // Save health
-            data.health = {
-                weight: document.getElementById('weight').value,
-                sleep: document.getElementById('sleep').value,
-                water: document.getElementById('water').value,
-                exercise: document.getElementById('exercise').value
-            };
-            
-            // Save money
-            data.money = {
-                total: document.getElementById('total').value,
-                spent: document.getElementById('spent').value,
-                spoil: document.getElementById('spoil').value,
-                gained: document.getElementById('gained').value
-            };
-            
-            // Save nutrition
-            data.nutrition = {
-                breakfast: document.getElementById('breakfast').value,
-                lunch: document.getElementById('lunch').value,
-                dinner: document.getElementById('dinner').value,
-                snacks: document.getElementById('snacks').value
-            };
-            
-            // Save priorities
-            data.priorities = {
-                priority1: document.getElementById('priority1').value,
-                priority2: document.getElementById('priority2').value,
-                priority3: document.getElementById('priority3').value
-            };
-            
-            // Save notes
-            data.notes = {
-                health: document.getElementById('healthNotes').value,
-                money: document.getElementById('moneyNotes').value,
-                nutrition: document.getElementById('nutritionNotes').value,
-                winsGratitude: document.getElementById('winsGratitude').value
-            };
+            return data;
         }
-        
+
         function loadData() {
-            // Load date and day
-            document.getElementById('date').value = data.date || '';
-            document.getElementById('day').value = data.day || '';
+            const dateKey = getDateKey();
             
-            // Load time blocks
+            // Clear current data
+            clearForm();
+            
+            // Load from Firebase
+            db.collection('dailyPlanner').doc(dateKey).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        populateForm(data);
+                        updateSaveStatus('saved');
+                    } else {
+                        updateSaveStatus('saved');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading data:', error);
+                    updateSaveStatus('saved');
+                });
+        }
+
+        function clearForm() {
+            // Clear all inputs
+            document.querySelectorAll('input[type="text"], textarea').forEach(el => {
+                el.value = '';
+            });
+            
+            // Clear time blocks
             document.querySelectorAll('.time-cell').forEach(cell => {
                 cell.classList.remove('filled');
             });
-            
-            Object.keys(data.timeBlocks).forEach(key => {
-                const [task, hour] = key.split('-');
-                const cell = document.querySelector(`.time-cell[data-task="${task}"][data-hour="${hour}"]`);
-                if (cell) cell.classList.add('filled');
-            });
-            
-            // Load health
-            Object.keys(data.health || {}).forEach(key => {
-                const el = document.getElementById(key);
-                if (el) el.value = data.health[key] || '';
-            });
-            
-            // Load money
-            Object.keys(data.money || {}).forEach(key => {
-                const el = document.getElementById(key);
-                if (el) el.value = data.money[key] || '';
-            });
-            
-            // Load nutrition
-            Object.keys(data.nutrition || {}).forEach(key => {
-                const el = document.getElementById(key);
-                if (el) el.value = data.nutrition[key] || '';
-            });
-            
-            // Load priorities
-            Object.keys(data.priorities || {}).forEach(key => {
-                const el = document.getElementById(key);
-                if (el) el.value = data.priorities[key] || '';
-            });
-            
-            // Load notes
-            Object.keys(data.notes || {}).forEach(key => {
-                const el = document.getElementById(key === 'winsGratitude' ? 'winsGratitude' : key + 'Notes');
-                if (el) el.value = data.notes[key] || '';
-            });
         }
-        
-        function saveToLocalStorage() {
-            saveData();
-            try {
-                const dateKey = data.date || new Date().toLocaleDateString();
-                localStorage.setItem(`planner_${dateKey}`, JSON.stringify(data));
-                alert('Planner saved successfully!');
-            } catch (e) {
-                alert('Unable to save. Your browser may not support local storage.');
+
+        function populateForm(data) {
+            // Time blocks
+            if (data.timeBlocks) {
+                Object.keys(data.timeBlocks).forEach(key => {
+                    const [task, hour] = key.split('-');
+                    const cell = document.querySelector(`.time-cell[data-task="${task}"][data-hour="${hour}"]`);
+                    if (cell) cell.classList.add('filled');
+                });
+            }
+            
+            // Health
+            if (data.health) {
+                document.getElementById('weight').value = data.health.weight || '';
+                document.getElementById('sleep').value = data.health.sleep || '';
+                document.getElementById('water').value = data.health.water || '';
+                document.getElementById('exercise').value = data.health.exercise || '';
+                document.getElementById('healthNotes').value = data.health.notes || '';
+            }
+            
+            // Nutrition
+            if (data.nutrition) {
+                document.getElementById('breakfast').value = data.nutrition.breakfast || '';
+                document.getElementById('lunch').value = data.nutrition.lunch || '';
+                document.getElementById('dinner').value = data.nutrition.dinner || '';
+                document.getElementById('snacks').value = data.nutrition.snacks || '';
+                document.getElementById('nutritionNotes').value = data.nutrition.notes || '';
+            }
+            
+            // Money
+            if (data.money) {
+                document.getElementById('total').value = data.money.total || '';
+                document.getElementById('spent').value = data.money.spent || '';
+                document.getElementById('spoil').value = data.money.spoil || '';
+                document.getElementById('gained').value = data.money.gained || '';
+                document.getElementById('moneyNotes').value = data.money.notes || '';
+            }
+            
+            // Wins & Gratitude
+            document.getElementById('winsGratitude').value = data.winsGratitude || '';
+            
+            // Priorities
+            if (data.priorities) {
+                document.getElementById('priority1').value = data.priorities.priority1 || '';
+                document.getElementById('priority2').value = data.priorities.priority2 || '';
+                document.getElementById('priority3').value = data.priorities.priority3 || '';
             }
         }
-        
-        function loadFromLocalStorage() {
-            try {
-                const dateKey = new Date().toLocaleDateString();
-                const saved = localStorage.getItem(`planner_${dateKey}`);
-                if (saved) {
-                    Object.assign(data, JSON.parse(saved));
-                    loadData();
+
+        function saveNow() {
+            const data = collectData();
+            const dateKey = getDateKey();
+            
+            updateSaveStatus('saving');
+            
+            db.collection('dailyPlanner').doc(dateKey).set(data)
+                .then(() => {
+                    console.log('Data saved successfully');
+                    updateSaveStatus('saved');
+                })
+                .catch(error => {
+                    console.error('Error saving data:', error);
+                    alert('Error saving data. Please try again.');
+                    updateSaveStatus('saved');
+                });
+        }
+
+        function triggerAutoSave() {
+            clearTimeout(autoSaveTimer);
+            updateSaveStatus('saving');
+            
+            autoSaveTimer = setTimeout(() => {
+                saveNow();
+            }, 2000); // Save after 2 seconds of inactivity
+        }
+
+        function setupAutoSave() {
+            document.querySelectorAll('input, textarea').forEach(el => {
+                el.addEventListener('input', triggerAutoSave);
+                el.addEventListener('change', triggerAutoSave);
+            });
+        }
+
+        function setupScheduledSave() {
+            // Schedule daily save at 4 PM
+            function scheduleNextSave() {
+                const now = new Date();
+                const scheduledTime = new Date();
+                scheduledTime.setHours(16, 0, 0, 0); // 4 PM
+                
+                // If it's already past 4 PM today, schedule for tomorrow
+                if (now >= scheduledTime) {
+                    scheduledTime.setDate(scheduledTime.getDate() + 1);
                 }
-            } catch (e) {
-                console.log('No saved data found');
+                
+                const timeUntilSave = scheduledTime - now;
+                
+                clearTimeout(scheduledSaveTimer);
+                scheduledSaveTimer = setTimeout(() => {
+                    saveNow();
+                    console.log('Scheduled save at 4 PM completed');
+                    scheduleNextSave(); // Schedule next day's save
+                }, timeUntilSave);
+                
+                console.log(`Next scheduled save at: ${scheduledTime.toLocaleString()}`);
+            }
+            
+            scheduleNextSave();
+        }
+
+        function setupEventListeners() {
+            // Date input change listener is already added in updateDateDisplay section
+        }
+
+        function updateSaveStatus(status) {
+            const statusEl = document.getElementById('saveStatus');
+            
+            if (status === 'saving') {
+                statusEl.className = 'status-badge status-saving';
+                statusEl.innerHTML = '<div class="spinner"></div><span>Saving...</span>';
+            } else {
+                statusEl.className = 'status-badge status-saved';
+                statusEl.innerHTML = '<i class="fas fa-check-circle"></i><span>Saved</span>';
             }
         }
-        
-        function clearAll() {
-            if (confirm('Are you sure you want to clear all data?')) {
-                // Clear data object
-                data.date = '';
-                data.day = '';
-                data.timeBlocks = {};
-                data.health = {};
-                data.money = {};
-                data.nutrition = {};
-                data.priorities = {};
-                data.notes = {};
-                
-                // Clear all inputs
-                document.querySelectorAll('input, textarea').forEach(el => el.value = '');
-                document.querySelectorAll('.time-cell').forEach(cell => cell.classList.remove('filled'));
-                
-                // Set today's date
-                const today = new Date();
-                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                document.getElementById('date').value = today.toLocaleDateString();
-                document.getElementById('day').value = days[today.getDay()];
-                saveData();
-            }
+
+        // History Functions
+        function viewHistory() {
+            const modal = document.getElementById('historyModal');
+            const historyList = document.getElementById('historyList');
+            
+            modal.classList.add('active');
+            historyList.innerHTML = '<p style="text-align: center; color: #999; padding: 40px 0;"><i class="fas fa-spinner fa-spin" style="font-size: 32px;"></i><br><br>Loading history...</p>';
+            
+            db.collection('dailyPlanner')
+                .orderBy('date', 'desc')
+                .limit(30)
+                .get()
+                .then(snapshot => {
+                    if (snapshot.empty) {
+                        historyList.innerHTML = '<p style="text-align: center; color: #999; padding: 40px 0;"><i class="fas fa-inbox" style="font-size: 48px;"></i><br><br>No history found. Start planning to build your history!</p>';
+                        return;
+                    }
+                    
+                    historyList.innerHTML = '';
+                    
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const item = document.createElement('div');
+                        item.className = 'history-item';
+                        
+                        const date = new Date(data.date + 'T00:00:00');
+                        const formattedDate = date.toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                        });
+                        
+                        let preview = '';
+                        if (data.priorities && data.priorities.priority1) {
+                            preview = `Top Priority: ${data.priorities.priority1}`;
+                        } else if (data.winsGratitude) {
+                            preview = data.winsGratitude.substring(0, 60) + '...';
+                        } else {
+                            preview = 'Click to view details';
+                        }
+                        
+                        item.innerHTML = `
+                            <div class="history-date">${formattedDate}</div>
+                            <div class="history-preview">${preview}</div>
+                        `;
+                        
+                        item.onclick = () => {
+                            currentDate = date;
+                            updateDateDisplay();
+                            loadData();
+                            closeHistory();
+                        };
+                        
+                        historyList.appendChild(item);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading history:', error);
+                    historyList.innerHTML = '<p style="text-align: center; color: #e74c3c; padding: 40px 0;"><i class="fas fa-exclamation-circle" style="font-size: 48px;"></i><br><br>Error loading history. Please try again.</p>';
+                });
         }
-        
-        // Initialize
-        initializeTimeTable();
-        
-        // Set today's date by default
-        const today = new Date();
-        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        data.date = today.toLocaleDateString();
-        data.day = days[today.getDay()];
-        
-        // Load from localStorage if available
-        loadFromLocalStorage();
-        loadData();
-        
-        // Auto-save on all inputs
-        document.querySelectorAll('input, textarea').forEach(el => {
-            el.addEventListener('input', saveData);
-            el.addEventListener('change', saveData);
+
+        function closeHistory() {
+            document.getElementById('historyModal').classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('historyModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeHistory();
+            }
         });
+
+        // Initialize app
+        init();
     </script>
 </body>
 </html>
